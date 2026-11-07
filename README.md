@@ -155,6 +155,32 @@ python demo.py -p assets/examples/pirateship.glb -r 512 -o output/pirateship.glb
 
 ## API Usage
 
+### Mesh conversion with crossing cancellation and surface fitting
+
+`convert_mesh.py` runs FaithC encoding, even-crossing cancellation, and 44 Adam
+steps fitting anchors to the input surface. It preserves the input coordinate
+system and exports geometry. Bake tessellation and displacement into the input
+mesh before running it. The crossing heuristic has been validated on closed,
+consistently oriented meshes.
+
+```bash
+pip install "open3d>=0.18"
+python convert_mesh.py model.glb
+python convert_mesh.py model.obj --resolution 512 --output output/refined.ply
+```
+
+Resolution defaults to **2048** and must be a power of two. The default output is
+`<input_stem>_faithc_<resolution>.glb` beside the input. Output formats include
+GLB, OBJ, PLY, STL, OFF and NPZ (`v`, `f`). FBX import uses Blender, detected from
+PATH or a standard Windows installation, with `--blender` available to specify
+the executable. Materials and textures are not transferred.
+
+`--steps`, `--samples`, and `--batch-size` control fitting (defaults 44, 850000,
+and 65536). Fitting accumulates gradients in chunks. The FaithC encoding and
+decoding stages still require memory proportional to the active voxel count.
+
+### Python API
+
 ```python
 import torch
 import trimesh

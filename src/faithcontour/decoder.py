@@ -20,6 +20,7 @@ class DecodedMesh:
     """Result of FCT decoding."""
     vertices: torch.Tensor  # [V, 3]
     faces: torch.Tensor     # [F, 3]
+    voxel_indices: Optional[torch.Tensor] = None  # [V] originating voxel per vertex
 
 
 class FCTDecoder:
@@ -90,7 +91,8 @@ class FCTDecoder:
         if K == 0:
             return DecodedMesh(
                 vertices=torch.empty(0, 3, device=device),
-                faces=torch.empty(0, 3, dtype=torch.long, device=device)
+                faces=torch.empty(0, 3, dtype=torch.long, device=device),
+                voxel_indices=active_voxel_indices
             )
         
         # Step 1: Get edge indices for all voxels
@@ -146,7 +148,8 @@ class FCTDecoder:
         if valid_edge_ids.numel() == 0:
             return DecodedMesh(
                 vertices=anchors,
-                faces=torch.empty(0, 3, dtype=torch.long, device=device)
+                faces=torch.empty(0, 3, dtype=torch.long, device=device),
+                voxel_indices=active_voxel_indices
             )
         
         # Step 4: Form quads from incident cubes
@@ -199,7 +202,10 @@ class FCTDecoder:
             raise ValueError(f"Unknown triangulation_mode: {mode}. "
                            f"Valid options: 'auto', 'simple_02', 'simple_13', 'length', 'angle', 'normal', 'normal_abs'")
         
-        return DecodedMesh(vertices=vertices, faces=faces)
+        return DecodedMesh(
+            vertices=vertices, faces=faces,
+            voxel_indices=active_voxel_indices[used_verts]
+        )
     
     def decode_from_result(self, fct_result) -> DecodedMesh:
         """
